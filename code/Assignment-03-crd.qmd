@@ -1,6 +1,6 @@
 ---
 title: "Assignment 3 - CRD"
-author: "YOUR NAME HERE"  
+author: "COMFORT ADEGBENRO"  
 format:
   html:
     code-fold: false
@@ -36,13 +36,19 @@ The different sections representing what we did in class were left in the script
 Here is where we load the packages we will use.  
 Make sure to load each package in the chunk below.  
 ```{r setup}
-
+# Loading packages
+library(tidyverse)
+library(car)
+library(broom)
+library(emmeans)
+library(multcomp)
 
 ```
 
 Now, import the data set `wheat_nk_bamyan.csv` in the chunk below.  
 ```{r data import}
-
+crd_ass = read_csv("../data/wheat_nk_bamyan.csv")
+crd_ass
 
 ```
 
@@ -53,15 +59,72 @@ For that, a study was conducted using a completely randomized design as the expe
 
 # b) EDA tables  
 Use this space to conduct exploratory data analysis of the imported data, in the form of tables.  
+```{r summary}
+summary(crd_ass)
+
+```
+```{r glimpse}
+glimpse(crd_ass)
+
+```
 
 
 # c) Wrangling  
 Here, make sure to wrangle your data set with all needed steps. Refer back to class code if you need a refresher on what was needed.  
+```{r crd_asw}
+crd_asw = crd_ass %>%
+  mutate(rep = factor(rep),
+         nrate_kgha = factor(nrate_kgha),
+         krate_kgha = factor(krate_kgha)
+         ) %>%
+  mutate(trtname = paste0(nrate_kgha,"+",krate_kgha))
 
+crd_asw
+
+```
+```{r summary crd_asw}
+summary(crd_asw)
+```
 
 # d) EDA plots  
 Now, explore the wrangled data using plots.  
 Make sure to explore plots showing the main effects and the interaction.  
+```{r nitrogen boxplot}
+ggplot(crd_asw, aes(x= nrate_kgha,
+                    y= yield_kgha,
+                    color= nrate_kgha
+                    )) +
+  geom_boxplot() +
+  geom_jitter() +
+  theme(legend.position = "none")
+
+```
+The boxplot showing the effect of nitrogen rates on the yield of wheat shows that there could be nitrogen effect on yield. Specifically, the 200 kg/ha rate of nitrogen gives higher wheat yield, with the 0 kg/ha nitrogen rate having the lowest wheat yield.
+
+```{r potassium boxplot}
+ggplot(crd_asw, aes(x= krate_kgha,
+                    y= yield_kgha,
+                    color= krate_kgha
+                    )) +
+  geom_boxplot() +
+  geom_jitter() +
+  theme(legend.position = "none")
+
+```
+Similar to the effect of nitrogen, the highest potassium rate (60 kg/ha) seems to support more yield compared to the other rates. The 0 kg/ha of potassium resulted in the lowest yield.
+
+```{r n by k boxplot}
+ggplot(crd_asw, aes(x= nrate_kgha,
+                    y= yield_kgha,
+                    color= nrate_kgha
+                    )) +
+  geom_boxplot() +
+  geom_jitter() +
+  facet_grid(.~krate_kgha)
+  theme(legend.position = "none")
+
+```
+The boxplot for the nitrogen by potassium shows possible interactions. For instance, as potassium rates increased from 0 to 30 to 60 kg/ha, the yield increased irrespective of the nitrogen rate. Additionally, when potassium increased from 0 to 30 kg/ha, the yield responses for the nitrogen treatments was clearly different, with the 200 kg/ha of nitrogen producing more wheat yield compared to the 100 kg/ha of nitrogen. However, at the highest level of potassium, little to no increase was observed for 200 kg/ha of nitrogen, while the yield of 100 kg/ha nitrogen increased to match up with the 200 kg/ha treatment.
 
 ## Question 1) Below each plot of this section, write a sentence explaining your visual interpretation of the plot.  
 
@@ -71,15 +134,38 @@ Remember to set the contrast type to sum-to-zero (the default in R is set-to-zer
 
 Also, remember to specify all model terms needed for the treatment design.  
 
+```{r model}
+# changing to sum-to-zero contrast
+options(contrasts = c("contr.sum", "contr.poly"))
+
+# fitting the model
+crd_mod = lm(yield_kgha ~ nrate_kgha * krate_kgha,
+             data = crd_asw)
+
+# summary of model
+summary(crd_mod)
+```
+
 # f) ANOVA table  
 Use this section to check the ANOVA table, ensuring you use type 3 sum-of-squares.
+```{r ANOVA}
+Anova(crd_mod, type = 3)
 
-
+```
 ## Question 2) Based on the ANOVA table above, for which effect(s) in the ANOVA should you extract means and perform pair-wise comparisons? Explain why.  
 
+Results from the ANOVA showed that the interaction between the two treatments (nitrogen and potassium rates) was not significant, however, the main effects of each treatment were significant. therefore, we should focus on extracting means and perform pair-wise comparisons for nitrogen, then potassium, in order to know which rates for each treatment performed better or less.
 
 # g) Linear model assumptions  
 Use this section to first compute your residuals, including studentdized residuals.  
+
+```{r computing residuals}
+crd_resid = augment(crd_mod) %>%
+  mutate(.studresid = rstudent(crd_mod)) # to create the studentdized residuals
+
+crd_resid
+
+```
 
 ## Question 3) What are the linear model assumptions that we need to check for? Create subsections (using ##) below for each of these assumptions, and write code to produce plots to check for these assumptions. For each assumption, write down your interpretation of the produced plots, and your thoughts if the assumptions hold or not.  
 
