@@ -35,7 +35,7 @@ The different sections representing what we did in class were left in the script
 # a) Setup  
 Here is where we load the packages we will use.  
 Make sure to load each package in the chunk below.  
-```{r setup}
+```{r setup, message=FALSE}
 # Loading packages
 library(tidyverse)
 library(car)
@@ -48,7 +48,7 @@ library(multcomp)
 Now, import the data set `wheat_nk_bamyan.csv` in the chunk below.  
 ```{r data import}
 crd_ass = read_csv("../data/wheat_nk_bamyan.csv")
-crd_ass
+head(crd_ass)
 
 ```
 
@@ -79,12 +79,13 @@ crd_asw = crd_ass %>%
          ) %>%
   mutate(trtname = paste0(nrate_kgha,"+",krate_kgha))
 
-crd_asw
+head(crd_asw)
 
 ```
 ```{r summary crd_asw}
 summary(crd_asw)
 ```
+## Question 1) Below each plot of this section, write a sentence explaining your visual interpretation of the plot.  
 
 # d) EDA plots  
 Now, explore the wrangled data using plots.  
@@ -126,8 +127,6 @@ ggplot(crd_asw, aes(x= nrate_kgha,
 ```
 The boxplot for the nitrogen by potassium shows possible interactions. For instance, as potassium rates increased from 0 to 30 to 60 kg/ha, the yield increased irrespective of the nitrogen rate. Additionally, when potassium increased from 0 to 30 kg/ha, the yield responses for the nitrogen treatments was clearly different, with the 200 kg/ha of nitrogen producing more wheat yield compared to the 100 kg/ha of nitrogen. However, at the highest level of potassium, little to no increase was observed for 200 kg/ha of nitrogen, while the yield of 100 kg/ha nitrogen increased to match up with the 200 kg/ha treatment.
 
-## Question 1) Below each plot of this section, write a sentence explaining your visual interpretation of the plot.  
-
 # e) Statistical model  
 In this section, run the appropriate model.  
 Remember to set the contrast type to sum-to-zero (the default in R is set-to-zero, which is not what we want).  
@@ -163,23 +162,176 @@ Use this section to first compute your residuals, including studentdized residua
 crd_resid = augment(crd_mod) %>%
   mutate(.studresid = rstudent(crd_mod)) # to create the studentdized residuals
 
-crd_resid
+head(crd_resid)
 
 ```
 
 ## Question 3) What are the linear model assumptions that we need to check for? Create subsections (using ##) below for each of these assumptions, and write code to produce plots to check for these assumptions. For each assumption, write down your interpretation of the produced plots, and your thoughts if the assumptions hold or not.  
 
+## Residual independence
+
+```{r}
+ggplot(crd_resid, aes(x= .fitted,
+                      y= .studresid)) +
+  geom_point(shape = 21,
+             fill= "purple",
+             size= 3,
+             alpha= 0.7) +
+  geom_hline(yintercept = c(-3,0,3), color = "red") +
+  geom_smooth() +
+  theme_bw()
+
+```
+The assumption of residual independence is satisfies as there are no patterns observed. Additionally, the smooth line sits on the th zero of the y axis and the shaded areas are around the zero mark too.
+
+## Residual variance homogeneity
+
+```{r}
+ggplot(crd_resid, aes(x= .fitted,
+                      y= .studresid)) +
+  geom_point(shape = 21,
+             fill= "purple",
+             size= 3,
+             alpha= 0.7) +
+  geom_hline(yintercept = c(-3,0,3), color = "red") +
+  geom_smooth() +
+  theme_bw()
+
+```
+The residuals variance are homogeneous as the spread are uniform across the plot. There is no distinct pattern different from other parts of the plot. There is no heteroscedasticity
+
+## Residual normality
+
+```{r qq plot}
+ggplot(crd_resid, aes(sample = .studresid)) +
+         stat_qq() +
+         stat_qq_line() +
+  theme_bw()
+```
+The qq-plot shows that some points are slighly deviated from the line, especially in the middle. It is not on the extreme end, so can be accepted.
+
+```{r density plot}
+ggplot(crd_resid, aes(x= .studresid)) +
+  geom_density() +
+  scale_x_continuous(breaks = c(-2,0,2), limits = c(-3,3)) +
+  theme_bw()
+```
+The density plots looks like it has two peaks with the main peak close to the mean. To confirm if the rule of normal distribution is met, more tests on the normal distribution and spread of the residuals are carried out below.
+
+```{r Extra tests for heteroscedasticity}
+
+# Shapiro-Wilk Test
+shapiro.test(residuals(crd_mod)) # If p < 0.05, residuals significantly deviate from normality
+
+# Breusch-Pagan Test
+library(lmtest)
+bptest(crd_mod)  # If p < 0.05, heteroscedasticity is present
+
+# Non-Constant Variance Test
+ncvTest(crd_mod)  # If p > 0.05, no significant heteroscedasticity detected
+
+# White’s Test for Non-Linear Heteroscedasticity
+bptest(crd_mod, ~ fitted(crd_mod) + 
+         I(fitted(crd_mod)^2))  # p > 0.05 means no evidence of heteroscedasticity.
+
+```
+All p values were above 0.05, hence the assumption is met for normal distribution and doublecheck for homoscedasticity
+
+## Outlier detection
+
+```{r}
+ggplot(crd_resid, aes(x= .fitted,
+                      y= .studresid)) +
+  geom_point(shape = 21,
+             fill= "purple",
+             size= 3,
+             alpha= 0.7) +
+  geom_hline(yintercept = c(-3,0,3), color = "red") +
+  geom_smooth()
+```
+All residuals are within the -3 and 3 range, so there are no outliers. The assumption for outliers is met.
+
 # h) Model means  
-Use this section to extract model means according to your decision of the ANOVA table effects.  
+Use this section to extract model means according to your decision of the ANOVA table effects. 
+```{r emmeans for nrate only}
+crd_means_n = emmeans(crd_mod, ~nrate_kgha)
+crd_means_n
+
+```
+```{r emmeans for krate only}
+crd_means_k = emmeans(crd_mod, ~krate_kgha)
+crd_means_k
+
+```
 
 # i) Pairwise comparisons  
 Use this section to perform pair-wise comparison of the means extracted above.  
 
-Make sure to reverse the order from high to low, use letters instead of numbers, and no adjustment.  
+Make sure to reverse the order from high to low, use letters instead of numbers, and no adjustment. 
+
+
+```{r pairwise comparison n}
+crd_cld_n = cld(crd_means_n,
+                reversed = T,
+                Letters = letters,
+                adjust = "none") %>%
+  as_data_frame() %>% # to convert pwc output to dataframe
+  mutate(letter = trimws(.group)) # to add an extra column removing space in the letters
+
+crd_cld_n
+```
+
+
+```{r pairwise comparison k}
+crd_cld_k = cld(crd_means_k,
+                reversed = T,
+                Letters = letters,
+                adjust = "none") %>%
+  as_data_frame() %>% # to convert pwc output to dataframe
+  mutate(letter = trimws(.group)) # to add an extra column removing space in the letters
+
+crd_cld_k
+```
 
 # g) Final plot(s)  
 Produce final plot(s) to show your results.  
 Make sure to include both **raw data** and **statistical model summary (i.e., letter separation)**.  
+
+```{r boxplot for nitrogen}
+ggplot() +
+  geom_boxplot(data= crd_asw,
+               aes(x= nrate_kgha, 
+                   y= yield_kgha,
+                   color= nrate_kgha), 
+               width = 0.4) +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal() +
+  geom_label(data = crd_cld_n,
+             aes(x=nrate_kgha, 
+                 y=emmean,
+                 label = letter)) +
+  theme(legend.position = "none") +
+  labs(x= "Nitrogen Rate (kg/ha)", 
+       y= "Wheat Yield (kg/ha)")
+
+```
+
+```{r boxplot for potassium}
+ggplot() +
+  geom_boxplot(data= crd_asw,
+               aes(x= krate_kgha, 
+                   y= yield_kgha,
+                   color= krate_kgha),
+               width = 0.4) +
+  theme_bw() +
+  geom_label(data = crd_cld_k,
+             aes(x= krate_kgha, 
+                 y= emmean,
+                 label = letter)) +
+  theme(legend.position = "none") +
+  labs(x= "Potassium Rate (kg/ha)", 
+       y= "Wheat Yield (kg/ha)")
+```
 
 Be mindful of your plot to ensure you are creating it in an intuitive way for your audience in relation to interpreting the letter separation structure you used.  
 
