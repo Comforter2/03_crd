@@ -42,7 +42,7 @@ library(car)
 library(broom)
 library(emmeans)
 library(multcomp)
-
+library(lmtest)
 ```
 
 Now, import the data set `wheat_nk_bamyan.csv` in the chunk below.  
@@ -98,7 +98,7 @@ ggplot(crd_asw, aes(x= nrate_kgha,
   geom_boxplot(width= 0.4) +
   geom_jitter() +
   theme_bw() +
-  theme(legend.position = "none") # creating box plot to first understand nitrogen effects on yield
+  theme(legend.position = "none") # box plot to understand nitrogen effects on yield
 
 ```
 
@@ -155,7 +155,7 @@ Use this section to check the ANOVA table, ensuring you use type 3 sum-of-square
 Anova(crd_mod, type = 3)
 
 ```
-From the ANOVA results, only the main effects of nirogen and potassium were significant. No significant interactive effect between treatment factors was observed.
+From the ANOVA results, only the main effects of nitrogen and potassium were significant. No significant interactive effect between treatment factors was observed.
 
 ## Question 2) Based on the ANOVA table above, for which effect(s) in the ANOVA should you extract means and perform pair-wise comparisons? Explain why.  
 
@@ -233,7 +233,6 @@ The density plot looks like it has two peaks with the main peak close to the mea
 shapiro.test(residuals(crd_mod)) # If p < 0.05, residuals significantly deviate from normality
 
 # Breusch-Pagan Test
-library(lmtest)
 bptest(crd_mod)  # If p < 0.05, heteroscedasticity is present
 
 # Non-Constant Variance Test
@@ -244,7 +243,7 @@ bptest(crd_mod, ~ fitted(crd_mod) +
          I(fitted(crd_mod)^2))  # p > 0.05 means no evidence of heteroscedasticity.
 
 ```
-All p values were above 0.05, hence the assumption is met for normal distribution and double checked for homoscedasticity
+From the test results above, all p values were above 0.05, hence the assumption is met for normal distribution and double checked for homoscedasticity
 
 ## Outlier detection
 
@@ -316,7 +315,7 @@ Here, make sure you deliver final plot(s) that is/are publication ready.
 Make sure to provide an interpretation for the plot(s) created, including which treatment levels were significantly higher/lower.
 
 
-Only plots for main effects for nitrogen and potassium are shown, since there was no significant interactive effect of both treatment factors on wheat yield. 
+**Only plots for main effects for nitrogen and potassium are shown, since there was no significant interactive effect of both treatment factors on wheat yield.**
 
 ```{r boxplot for nitrogen, message=FALSE, warning=FALSE}
 ggplot(data= crd_asw,
