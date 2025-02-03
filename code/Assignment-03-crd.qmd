@@ -46,9 +46,9 @@ library(multcomp)
 ```
 
 Now, import the data set `wheat_nk_bamyan.csv` in the chunk below.  
-```{r data import}
+```{r data import, message=FALSE, warning=FALSE}
 crd_ass = read_csv("../data/wheat_nk_bamyan.csv")
-head(crd_ass)
+head(crd_ass, 3)
 
 ```
 
@@ -75,15 +75,15 @@ Here, make sure to wrangle your data set with all needed steps. Refer back to cl
 crd_asw = crd_ass %>%
   mutate(rep = factor(rep),
          nrate_kgha = factor(nrate_kgha),
-         krate_kgha = factor(krate_kgha)
+         krate_kgha = factor(krate_kgha) # change the structure from dbl to factor
          ) %>%
-  mutate(trtname = paste0(nrate_kgha,"+",krate_kgha))
+  mutate(trtname = paste0(nrate_kgha,"+",krate_kgha)) # add a new column for treatment combination
 
-head(crd_asw)
+head(crd_asw, 3)
 
 ```
 ```{r summary crd_asw}
-summary(crd_asw)
+summary(crd_asw) # check summary of data again to confirm changes
 ```
 ## Question 1) Below each plot of this section, write a sentence explaining your visual interpretation of the plot.  
 
@@ -95,21 +95,24 @@ ggplot(crd_asw, aes(x= nrate_kgha,
                     y= yield_kgha,
                     color= nrate_kgha
                     )) +
-  geom_boxplot() +
+  geom_boxplot(width= 0.4) +
   geom_jitter() +
-  theme(legend.position = "none")
+  theme_bw() +
+  theme(legend.position = "none") # creating box plot to first understand nitrogen effects on yield
 
 ```
-The boxplot showing the effect of nitrogen rates on the yield of wheat shows that there could be nitrogen effect on yield. Specifically, the 200 kg/ha rate of nitrogen gives higher wheat yield, with the 0 kg/ha nitrogen rate having the lowest wheat yield.
+
+The box plot showing the effect of nitrogen rates on the yield of wheat suggests that there could be nitrogen effect on yield. Specifically, the 200 kg/ha rate of nitrogen gives higher wheat yield, with the 0 kg/ha nitrogen rate having the lowest wheat yield.
 
 ```{r potassium boxplot}
 ggplot(crd_asw, aes(x= krate_kgha,
                     y= yield_kgha,
                     color= krate_kgha
                     )) +
-  geom_boxplot() +
+  geom_boxplot(width = 0.4) +
   geom_jitter() +
-  theme(legend.position = "none")
+  theme_bw() +
+  theme(legend.position = "none") # quick overview of potassium effect on wheat yield
 
 ```
 Similar to the effect of nitrogen, the highest potassium rate (60 kg/ha) seems to support more yield compared to the other rates. The 0 kg/ha of potassium resulted in the lowest yield.
@@ -119,13 +122,14 @@ ggplot(crd_asw, aes(x= nrate_kgha,
                     y= yield_kgha,
                     color= nrate_kgha
                     )) +
-  geom_boxplot() +
+  geom_boxplot(width = 0.4) +
   geom_jitter() +
-  facet_grid(.~krate_kgha)
-  theme(legend.position = "none")
+  facet_grid(.~krate_kgha) +
+  theme_bw() +
+  theme(legend.position = "none") # nitrogen and potassium interaction
 
 ```
-The boxplot for the nitrogen by potassium shows possible interactions. For instance, as potassium rates increased from 0 to 30 to 60 kg/ha, the yield increased irrespective of the nitrogen rate. Additionally, when potassium increased from 0 to 30 kg/ha, the yield responses for the nitrogen treatments was clearly different, with the 200 kg/ha of nitrogen producing more wheat yield compared to the 100 kg/ha of nitrogen. However, at the highest level of potassium, little to no increase was observed for 200 kg/ha of nitrogen, while the yield of 100 kg/ha nitrogen increased to match up with the 200 kg/ha treatment.
+The box plot for the nitrogen by potassium shows possible interactions. For instance, as potassium rates increased from 0 to 30 to 60 kg/ha, the yield increased irrespective of the nitrogen rate. Additionally, when potassium increased from 0 to 30 kg/ha, the yield responses for the nitrogen treatments was clearly different, with the 200 kg/ha of nitrogen producing more wheat yield compared to the 100 kg/ha of nitrogen. However, at the highest level of potassium, little to no increase was observed for 200 kg/ha of nitrogen, while the yield of 100 kg/ha nitrogen increased to match up with the 200 kg/ha treatment.
 
 # e) Statistical model  
 In this section, run the appropriate model.  
@@ -133,7 +137,7 @@ Remember to set the contrast type to sum-to-zero (the default in R is set-to-zer
 
 Also, remember to specify all model terms needed for the treatment design.  
 
-```{r model}
+```{r model, message=FALSE, warning=FALSE}
 # changing to sum-to-zero contrast
 options(contrasts = c("contr.sum", "contr.poly"))
 
@@ -142,7 +146,7 @@ crd_mod = lm(yield_kgha ~ nrate_kgha * krate_kgha,
              data = crd_asw)
 
 # summary of model
-summary(crd_mod)
+#summary(crd_mod)
 ```
 
 # f) ANOVA table  
@@ -151,6 +155,8 @@ Use this section to check the ANOVA table, ensuring you use type 3 sum-of-square
 Anova(crd_mod, type = 3)
 
 ```
+From the ANOVA results, only the main effects of nirogen and potassium were significant. No significant interactive effect between treatment factors was observed.
+
 ## Question 2) Based on the ANOVA table above, for which effect(s) in the ANOVA should you extract means and perform pair-wise comparisons? Explain why.  
 
 Results from the ANOVA showed that the interaction between the two treatments (nitrogen and potassium rates) was not significant, however, the main effects of each treatment were significant. therefore, we should focus on extracting means and perform pair-wise comparisons for nitrogen, then potassium, in order to know which rates for each treatment performed better or less.
@@ -158,11 +164,11 @@ Results from the ANOVA showed that the interaction between the two treatments (n
 # g) Linear model assumptions  
 Use this section to first compute your residuals, including studentdized residuals.  
 
-```{r computing residuals}
+```{r computing residuals, message=FALSE, warning=FALSE}
 crd_resid = augment(crd_mod) %>%
   mutate(.studresid = rstudent(crd_mod)) # to create the studentdized residuals
 
-head(crd_resid)
+head(crd_resid, 3)
 
 ```
 
@@ -170,7 +176,7 @@ head(crd_resid)
 
 ## Residual independence
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 ggplot(crd_resid, aes(x= .fitted,
                       y= .studresid)) +
   geom_point(shape = 21,
@@ -182,11 +188,11 @@ ggplot(crd_resid, aes(x= .fitted,
   theme_bw()
 
 ```
-The assumption of residual independence is satisfies as there are no patterns observed. Additionally, the smooth line sits on the th zero of the y axis and the shaded areas are around the zero mark too.
+The assumption of residual independence is satisfies as there are no patterns observed. Additionally, the smooth line sits on the the zero of the y axis and the shaded areas are around the zero mark too.
 
 ## Residual variance homogeneity
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 ggplot(crd_resid, aes(x= .fitted,
                       y= .studresid)) +
   geom_point(shape = 21,
@@ -204,21 +210,24 @@ The residuals variance are homogeneous as the spread are uniform across the plot
 
 ```{r qq plot}
 ggplot(crd_resid, aes(sample = .studresid)) +
-         stat_qq() +
+         stat_qq(color= "purple",
+                 size= 3,
+                 alpha= 0.7) +
          stat_qq_line() +
   theme_bw()
 ```
-The qq-plot shows that some points are slighly deviated from the line, especially in the middle. It is not on the extreme end, so can be accepted.
+The qq-plot shows that some points are slightly deviated from the line, especially in the middle. It is not on the extreme end, so can be accepted.
 
 ```{r density plot}
 ggplot(crd_resid, aes(x= .studresid)) +
-  geom_density() +
+  geom_density(color= "purple",
+               linewidth= 0.8) +
   scale_x_continuous(breaks = c(-2,0,2), limits = c(-3,3)) +
   theme_bw()
 ```
-The density plots looks like it has two peaks with the main peak close to the mean. To confirm if the rule of normal distribution is met, more tests on the normal distribution and spread of the residuals are carried out below.
+The density plot looks like it has two peaks with the main peak close to the mean. To confirm if the rule of normal distribution is met, more tests on the normal distribution and spread of the residuals are carried out below.
 
-```{r Extra tests for heteroscedasticity}
+```{r Extra tests for heteroscedasticity, message=FALSE, warning=FALSE}
 
 # Shapiro-Wilk Test
 shapiro.test(residuals(crd_mod)) # If p < 0.05, residuals significantly deviate from normality
@@ -235,11 +244,11 @@ bptest(crd_mod, ~ fitted(crd_mod) +
          I(fitted(crd_mod)^2))  # p > 0.05 means no evidence of heteroscedasticity.
 
 ```
-All p values were above 0.05, hence the assumption is met for normal distribution and doublecheck for homoscedasticity
+All p values were above 0.05, hence the assumption is met for normal distribution and double checked for homoscedasticity
 
 ## Outlier detection
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 ggplot(crd_resid, aes(x= .fitted,
                       y= .studresid)) +
   geom_point(shape = 21,
@@ -253,14 +262,15 @@ All residuals are within the -3 and 3 range, so there are no outliers. The assum
 
 # h) Model means  
 Use this section to extract model means according to your decision of the ANOVA table effects. 
-```{r emmeans for nrate only}
+```{r emmeans for nrate only, message=FALSE, warning=FALSE}
 crd_means_n = emmeans(crd_mod, ~nrate_kgha)
-crd_means_n
+#crd_means_n
 
 ```
-```{r emmeans for krate only}
+
+```{r emmeans for krate only, message=FALSE, warning=FALSE}
 crd_means_k = emmeans(crd_mod, ~krate_kgha)
-crd_means_k
+#crd_means_k
 
 ```
 
@@ -270,7 +280,7 @@ Use this section to perform pair-wise comparison of the means extracted above.
 Make sure to reverse the order from high to low, use letters instead of numbers, and no adjustment. 
 
 
-```{r pairwise comparison n}
+```{r pairwise comparison n, message=FALSE, warning=FALSE}
 crd_cld_n = cld(crd_means_n,
                 reversed = T,
                 Letters = letters,
@@ -282,7 +292,7 @@ crd_cld_n
 ```
 
 
-```{r pairwise comparison k}
+```{r pairwise comparison k, message=FALSE, warning=FALSE}
 crd_cld_k = cld(crd_means_k,
                 reversed = T,
                 Letters = letters,
@@ -297,9 +307,18 @@ crd_cld_k
 Produce final plot(s) to show your results.  
 Make sure to include both **raw data** and **statistical model summary (i.e., letter separation)**.  
 
+Be mindful of your plot to ensure you are creating it in an intuitive way for your audience in relation to interpreting the letter separation structure you used.  
+
+In class, we did not have time to make it publication-ready (e.g., a plot looking professional and ready to be included in a manuscript).
+
+Here, make sure you deliver final plot(s) that is/are publication ready.  
+
+Make sure to provide an interpretation for the plot(s) created, including which treatment levels were significantly higher/lower.
+
+
 Only plots for main effects for nitrogen and potassium are shown, since there was no significant interactive effect of both treatment factors on wheat yield. 
 
-```{r boxplot for nitrogen}
+```{r boxplot for nitrogen, message=FALSE, warning=FALSE}
 ggplot(data= crd_asw,
                aes(x= nrate_kgha, 
                    y= yield_kgha,
@@ -313,11 +332,11 @@ ggplot(data= crd_asw,
                  y= emmean,
                  label = letter)) +
   theme(legend.position = "none",
-        axis.line = element_line(linewidth = 0.6),
-        axis.text = element_text(face = "bold", size= 9, 
+        axis.line = element_line(linewidth = 0.3),
+        axis.text = element_text(size= 9, 
                                  color = "black"),
-        axis.title = element_text(face = "bold"),
-        axis.ticks = element_line(linewidth = 0.8)) +
+        axis.ticks = element_line(linewidth = 0.3),
+        axis.title = element_text(hjust = 0.5)) +
   labs(x= "Nitrogen Rate (kg/ha)", 
        y= "Wheat Yield (kg/ha)")
 ggsave("nplot.png", path = "../output/")
@@ -325,7 +344,7 @@ ggsave("nplot.png", path = "../output/")
 ```
 As seen in the figure above, increasing nitrogen rate from 0 kg/ha to 100 kg/ha significantly increased wheat yield. However, increasing nitrogen rate up to 200 kg/ha did not result in additional increase in yield. Hence, 100 kg/ha of nitrogen is recommended to maximize wheat yield.
 
-```{r boxplot for potassium}
+```{r boxplot for potassium, message=FALSE, warning=FALSE}
 ggplot(data= crd_asw,
                aes(x= krate_kgha, 
                    y= yield_kgha,
@@ -339,25 +358,16 @@ ggplot(data= crd_asw,
                  y= emmean,
                  label = letter)) +
   theme(legend.position = "none",
-        axis.line = element_line(linewidth = 0.6),
-        axis.text = element_text(face = "bold", size= 9, 
+        axis.line = element_line(linewidth = 0.3),
+        axis.text = element_text(size= 9, 
                                  color = "black"),
-        axis.title = element_text(face = "bold"),
-        axis.ticks = element_line(linewidth = 0.8)) +
+        axis.ticks = element_line(linewidth = 0.3),
+        axis.title = element_text(hjust = 0.5)) +
   labs(x= "Potassium Rate (kg/ha)", 
        y= "Wheat Yield (kg/ha)")
 ggsave("kplot.png", path = "../output/")
 ```
 Potassium rates of 30 and 60 kg/ha resulted in the highest values of wheat yield, and there was no statistical difference between these two potassium rates. To maximize yield, a 30 kg/ha potassium rate is recommended.
-
-Be mindful of your plot to ensure you are creating it in an intuitive way for your audience in relation to interpreting the letter separation structure you used.  
-
-In class, we did not have time to make it publication-ready (e.g., a plot looking professional and ready to be included in a manuscript).
-
-Here, make sure you deliver final plot(s) that is/are publication ready.  
-
-Make sure to provide an interpretation for the plot(s) created, including which treatment levels were significantly higher/lower.
-
 
 # Submitting your work  
 Once you have developed all the code and answers, make sure to Render this quarto file.  
