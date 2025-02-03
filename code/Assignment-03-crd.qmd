@@ -297,41 +297,58 @@ crd_cld_k
 Produce final plot(s) to show your results.  
 Make sure to include both **raw data** and **statistical model summary (i.e., letter separation)**.  
 
+Only plots for main effects for nitrogen and potassium are shown, since there was no significant interactive effect of both treatment factors on wheat yield. 
+
 ```{r boxplot for nitrogen}
-ggplot() +
-  geom_boxplot(data= crd_asw,
+ggplot(data= crd_asw,
                aes(x= nrate_kgha, 
                    y= yield_kgha,
-                   color= nrate_kgha), 
-               width = 0.4) +
+                   color= nrate_kgha)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter() +
   scale_color_brewer(palette = "Dark2") +
   theme_minimal() +
   geom_label(data = crd_cld_n,
-             aes(x=nrate_kgha, 
-                 y=emmean,
+             aes(x= nrate_kgha, 
+                 y= emmean,
                  label = letter)) +
-  theme(legend.position = "none") +
+  theme(legend.position = "none",
+        axis.line = element_line(linewidth = 0.6),
+        axis.text = element_text(face = "bold", size= 9, 
+                                 color = "black"),
+        axis.title = element_text(face = "bold"),
+        axis.ticks = element_line(linewidth = 0.8)) +
   labs(x= "Nitrogen Rate (kg/ha)", 
        y= "Wheat Yield (kg/ha)")
+ggsave("nplot.png", path = "../output/")
 
 ```
+As seen in the figure above, increasing nitrogen rate from 0 kg/ha to 100 kg/ha significantly increased wheat yield. However, increasing nitrogen rate up to 200 kg/ha did not result in additional increase in yield. Hence, 100 kg/ha of nitrogen is recommended to maximize wheat yield.
 
 ```{r boxplot for potassium}
-ggplot() +
-  geom_boxplot(data= crd_asw,
+ggplot(data= crd_asw,
                aes(x= krate_kgha, 
                    y= yield_kgha,
-                   color= krate_kgha),
-               width = 0.4) +
-  theme_bw() +
+                   color= krate_kgha)) +
+  geom_boxplot(width = 0.4) +
+  geom_jitter() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_minimal() +
   geom_label(data = crd_cld_k,
              aes(x= krate_kgha, 
                  y= emmean,
                  label = letter)) +
-  theme(legend.position = "none") +
+  theme(legend.position = "none",
+        axis.line = element_line(linewidth = 0.6),
+        axis.text = element_text(face = "bold", size= 9, 
+                                 color = "black"),
+        axis.title = element_text(face = "bold"),
+        axis.ticks = element_line(linewidth = 0.8)) +
   labs(x= "Potassium Rate (kg/ha)", 
        y= "Wheat Yield (kg/ha)")
+ggsave("kplot.png", path = "../output/")
 ```
+Potassium rates of 30 and 60 kg/ha resulted in the highest values of wheat yield, and there was no statistical difference between these two potassium rates. To maximize yield, a 30 kg/ha potassium rate is recommended.
 
 Be mindful of your plot to ensure you are creating it in an intuitive way for your audience in relation to interpreting the letter separation structure you used.  
 
